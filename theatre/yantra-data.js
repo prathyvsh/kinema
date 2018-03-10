@@ -191,8 +191,6 @@
 
     const primitives = new Set(["rect", "circle", "line", "polyline", "text", "path", "g"]);
 
-    const shapeApply = (fns,s) => (fns[s.shape])(s);
-
     const offsetRect = s => {
 
 	let {cx,cy,x,y,width,height} = s;
@@ -290,6 +288,15 @@
 
     const normalizers = {circle: normalizeCircle, rect: normalizeRect, g: normalizeGroup, text: normalizeText, line: normalizeLine, polyline: normalizePolyline, path: normalizePath};
     
+    const buildShape = (s) => {
+	
+	let [shape, attrs] = s;
+
+	let normalizer = normalizers(shape);
+
+	normalizer(s);
+    }
+
     const parseEntity = s => normalizeColor(normalizeTransform(shapeApply(normalizers,s)));
 
     const setSVGAttrs = (el,attrs) => {
@@ -315,9 +322,44 @@
 
     };
 
-    const svgNode = (tag,attrs) => setSVGAttrs(document.createElementNS("http://www.w3.org/2000/svg", tag), attrs);
+    const svgNode = ([tag,attrs, trees]) => setSVGAttrs(document.createElementNS("http://www.w3.org/2000/svg", tag), attrs);
 
-    const genShape = sh => svgNode(sh.shape, sh);
+    const genShape = ([tag, attrs, ...trees]) => {
+
+	let [new_attrs, anims] = kvreduce(([acc, anims],k,v) => {
+
+	    if(v[0] == "a") {
+
+		return [dissoc(acc, k), Object.assign(anims, {[k]: v})];
+
+	    } return [acc, anims];
+
+	} , [attrs, {}], attrs);
+
+	// return [tag, new_attrs, ...trees];
+	let shapeNode = svgNode([tag, dissoc(new_attrs, "timing"), ...trees]);
+
+	let attrAnims = Object.entries(anims).map(x => parseAnim(shapeNode, x));
+
+	return [shapeNode, attrAnims];
+
+    };
+
+    const parseAnim = (shapeNode, [k, [tag, ...contents]]) => {
+
+	let result = contents, attrs = {};
+
+	if(typeof contents[0] == "object") {
+	    
+	    attrs = contents[0];
+	    contents = contents.slice(1);
+
+	};
+
+	return Object.assign(dissoc(attrs, "timing"),
+			     {node: shapeNode, transition: {[k]: contents}, timing: attrs.timing || 1000});
+	
+    };
 
     const genText = t => {
 
@@ -339,9 +381,8 @@
 
     };
 
-    const generateEntity = s => (s["shape"] == "g") ? genGroup(s) : (s["shape"] == "text") ? genText(s) : genShape(s);
-
-    const compile = s => primitives.has(s["shape"]) ? generateEntity(parseEntity(s)) : throwError("Parse Error: Unknown Shape");
+    // const compile = s => generateEntity(parseEntity(s));
+    const compile = s => genShape(s);
 
     /* API */
 
@@ -362,8 +403,6 @@
         return mag == 0 ? [0,0] : vDiv(v, mag);
 
     };
-
-    const circle = attrs => merge({shape: "circle"}, attrs);
 
     const rect = attrs => merge({shape: "rect"}, attrs);
 
@@ -421,11 +460,31 @@
 
     };
 
-    const render = (canvas,s) => (canvas.appendChild(compile(s)), s);
+    const makeKf = ({id, node, transition, timing}) => {
+
+	return {id, keyframe: new KeyframeEffect(node, transition,timing)};
+	
+    };
+
+    const render = (canvas,s) => {
+	
+	let [shapeNode, keyframes] = compile(s);
+
+	canvas.appendChild(shapeNode);
+
+	let kfs = keyframes.map(makeKf);
+
+	kfs.forEach(({id, keyframe}) => {
+	    
+	    let player = new Animation(keyframe);
+	    player.play();
+	});
+
+    };
 
     const surface = attrs => {
 
-	let s = svgNode("svg", attrs);
+	let s = svgNode(["svg", attrs]);
 
 	s.setAttributeNS("http://www.w3.org/2000/xmlns/","xmlns", "http://www.w3.org/2000/svg");
 
@@ -439,7 +498,7 @@
 
     const setGlobals = () => kvreduce((i,k,v) => global[k] = v ,{}, exports);
 
-    const exports = {rect, circle, line, polyline, path, text, g, rgba, render, repeat, repeatedly, random, translate, rotate, scale, range, steps, sample, parametrize, map, gmap, row, col, grid, ring, radToDeg, surface, setGlobals, dbg};
+    const exports = {rgba, render, repeat, repeatedly, random, translate, rotate, scale, range, steps, sample, parametrize, map, gmap, row, col, grid, ring, radToDeg, surface, setGlobals, dbg};
 
     global.yantra = exports;
 
