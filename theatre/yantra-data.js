@@ -349,7 +349,7 @@
 
 	let result = contents, attrs = {};
 
-	if(typeof contents[0] == "object") {
+	if(typeof contents[0] == "object" && !(contents[0] instanceof Array)) {
 	    
 	    attrs = contents[0];
 	    contents = contents.slice(1);
@@ -476,7 +476,7 @@
 
 	kfs.forEach(({id, keyframe}) => {
 	    
-	    let player = new Animation(keyframe);
+	    let player = new Animation(keyframe, document.timeline);
 	    player.play();
 	});
 
