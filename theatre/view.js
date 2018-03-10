@@ -18,6 +18,7 @@ render(canvas, eval(mirror.getValue()));
 
 mirror.on("change", () => {
 
+    z.clearChildren(canvas);
     render(canvas, eval(mirror.getValue()));
     
 });
