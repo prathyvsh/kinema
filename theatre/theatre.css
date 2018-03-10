@@ -1,0 +1,59 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+
+    font-family: "Signika", "Avenir", sans-serif;
+
+}
+
+#app {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-flow: column;
+    justify-content: stretch;
+}
+
+#split-screen {
+    flex: 1 0 auto;
+}
+
+#main-header {
+
+    background: hsla(210, 20%, 95%, 1);
+    padding: 1rem;
+    flex: 0 0 auto;
+}
+
+#main-header h1 {
+
+    font-weight: normal;
+    color: hsla(210, 20%, 45%, 1);
+
+}
+
+#split-screen {
+
+    display: flex;
+    flex-flow: row;
+    width: 100vw;
+    justify-content: stretch;
+
+}
+
+#silk-screen {
+
+    width: 50%;
+    
+}
+
+#silk-screen svg {
+    background: hsla(210, 40%, 15%, 1);
+}
+
+#editor {
+    background: hsla(210, 40%, 15%, 1);
+}

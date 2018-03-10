@@ -2,10 +2,10 @@
   "name": "kinema",
   "version": "0.0.1",
   "description": "Function programming idioms for Web Animations.",
-  "main": "kino.js",
+  "main": "kinema.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "bunchaeffinamateurs <bunchaeffinamateurs@gmail.com>",
+  "author": "prathyush <hi@prabros.com>",
   "license": "MIT"
 }
