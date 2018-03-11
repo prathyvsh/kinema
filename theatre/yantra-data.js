@@ -324,9 +324,9 @@
 
     const svgNode = ([tag,attrs, trees]) => setSVGAttrs(document.createElementNS("http://www.w3.org/2000/svg", tag), attrs);
 
-    const genShape = ([tag, attrs, ...trees]) => {
+    const buildAnims = attrs => {
 
-	let [new_attrs, anims] = kvreduce(([acc, anims],k,v) => {
+	const reduceAnims = ([acc,anims], k,v) => {
 
 	    if(v[0] == "a") {
 
@@ -334,18 +334,46 @@
 
 	    } return [acc, anims];
 
-	} , [attrs, {}], attrs);
+	}
 
-	// return [tag, new_attrs, ...trees];
-	let shapeNode = svgNode([tag, dissoc(new_attrs, "timing"), ...trees]);
+	return kvreduce(reduceAnims, [attrs, {}], attrs);
+	
+    };
 
-	let attrAnims = Object.entries(anims).map(x => parseAnim(shapeNode, x));
+    const genShape = ([tag, ...trees]) => {
+
+	let attrs = {};
+
+	if(trees.length > 0 && typeof trees[0] == "object" && !(trees[0] instanceof Array)) {
+
+	    attrs = trees[0];
+
+	    trees = trees.slice(1);
+
+	}
+
+	let [node_attrs, node_anims] = buildAnims(attrs);
+
+	let shapeNode = svgNode([tag, dissoc(node_attrs, "timing"), ...trees]);
+
+	let attrAnims = Object.entries(node_anims).map(x => parseAnim(shapeNode, x, node_attrs.timing));
+
+	trees.map(x => {
+	    
+	    let [node, anims] = genShape(x);
+
+	    shapeNode.appendChild(node);
+
+	    attrAnims = attrAnims.concat(anims);
+
+	});
+
 
 	return [shapeNode, attrAnims];
 
-    };
+	};
 
-    const parseAnim = (shapeNode, [k, [tag, ...contents]]) => {
+    const parseAnim = (shapeNode, [k, [tag, ...contents]], globalTiming) => {
 
 	let result = contents, attrs = {};
 
@@ -357,7 +385,7 @@
 	};
 
 	return Object.assign(dissoc(attrs, "timing"),
-			     {node: shapeNode, transition: {[k]: contents}, timing: attrs.timing || 1000});
+			     {node: shapeNode, transition: {[k]: contents}, timing: attrs.timing || globalTiming || 1000});
 	
     };
 
@@ -477,7 +505,9 @@
 	kfs.forEach(({id, keyframe}) => {
 	    
 	    let player = new Animation(keyframe, document.timeline);
+
 	    player.play();
+
 	});
 
     };

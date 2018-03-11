@@ -18,14 +18,29 @@ render(canvas, eval(mirror.getValue()));
 
 mirror.on("change", () => {
 
+
+    let anims = document.getAnimations();
+
+    anims.map(x => {x.cancel()});
+
     z.clearChildren(canvas);
+
     render(canvas, eval(mirror.getValue()));
+
     
 });
 
 z.$("#selector").addEventListener("change", evt => {
 
     mirror.setValue(examples.find(x => x.title == evt.target.value).source);
+
+    let anims = document.getAnimations();
+
+    anims.map(x => {
+	
+	x.cancel()
+    });
+
     render(canvas, eval(mirror.getValue()));
     
 });
